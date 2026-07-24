@@ -41,6 +41,38 @@
             font-weight: 300;
             letter-spacing: 2px;
             color: #8b7355;
+            margin-bottom: 1rem;
+        }
+
+        /* ── Wedding Website Button ── */
+        .wedding-website-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            background-color: transparent;
+            color: #8b7355;
+            border: 2px solid #d4c5b9;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            cursor: pointer;
+        }
+
+        .wedding-website-btn:hover {
+            background-color: #8b7355;
+            color: #fffaf5;
+            border-color: #8b7355;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .wedding-website-btn .btn-icon {
+            font-size: 1rem;
         }
 
         .container {
@@ -431,6 +463,8 @@
 
             .tab-button { width: 100%; }
 
+            .wedding-website-btn { width: 100%; justify-content: center; }
+
             .password-modal {
                 padding: 2rem 1.5rem;
                 margin: 1rem;
@@ -449,6 +483,13 @@
 <body>
     <header>
         <h1>Reuben and Cami 2026</h1>
+        <!-- ── Wedding Website Button ── -->
+        <a  href="https://withjoy.com/reuben-and-cameron-2026"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="wedding-website-btn">
+            <span class="btn-icon">💍</span> Wedding Website
+        </a>
     </header>
 
     <!-- Password Modal Overlay -->
@@ -511,7 +552,6 @@
                 <div class="admin-header">
                     <div>
                         <h2 style="color: #8b7355; font-size: 1.8rem; font-weight: 400;">Admin Panel</h2>
-                        <!-- Firebase live badge -->
                         <div class="firebase-badge">
                             <span>🔥</span> Firebase Realtime Database
                         </div>
@@ -598,9 +638,6 @@
         // ─────────────────────────────────────────────
         //  App State
         // ─────────────────────────────────────────────
-
-        // guestList now stores Firebase push-key alongside name/table:
-        // [ { key: "-NxABC123", name: "John Doe", table: 3 }, … ]
         let guestList       = [];
         let tablePhoto      = null;
         let isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
@@ -627,14 +664,12 @@
                     });
                 }
 
-                // Reveal search form on first load
                 if (!guestDataLoaded) {
                     guestDataLoaded = true;
                     document.getElementById('guestLoadingState').style.display = 'none';
                     document.getElementById('guestSearchForm').style.display   = 'block';
                 }
 
-                // Refresh admin list if panel is open
                 if (isAdminLoggedIn) displayGuestList();
 
             }, (error) => {
@@ -684,8 +719,8 @@
         // ─────────────────────────────────────────────
         function showPasswordModal() {
             document.getElementById('passwordModalOverlay').classList.add('active');
-            document.getElementById('adminPassword').value            = '';
-            document.getElementById('passwordMessage').innerHTML      = '';
+            document.getElementById('adminPassword').value       = '';
+            document.getElementById('passwordMessage').innerHTML = '';
             document.getElementById('adminPassword').focus();
         }
 
@@ -743,8 +778,8 @@
         //  Upload Excel / CSV  →  Firebase RTDB
         // ─────────────────────────────────────────────
         function uploadExcel() {
-            const fileInput   = document.getElementById('excelUpload');
-            const file        = fileInput.files[0];
+            const fileInput    = document.getElementById('excelUpload');
+            const file         = fileInput.files[0];
             const adminMessage = document.getElementById('adminMessage');
 
             if (!file) return;
@@ -767,7 +802,6 @@
                         rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                     }
 
-                    // Build validated guest objects
                     const newGuests = [];
                     rows.forEach(row => {
                         if (row.length >= 3) {
@@ -788,19 +822,15 @@
 
                     showMessage(adminMessage, '⏳ Uploading to Firebase…', 'success');
 
-                    // ── Write to Firebase ────────────────────
-                    // 1. Clear existing guests node
                     await db.ref('guests').remove();
 
-                    // 2. Build batch update using auto-generated push keys
                     const updates = {};
                     newGuests.forEach(guest => {
-                        const key    = db.ref('guests').push().key; // generate unique key
+                        const key    = db.ref('guests').push().key;
                         updates[key] = guest;
                     });
 
                     await db.ref('guests').update(updates);
-                    // ────────────────────────────────────────
 
                     showMessage(adminMessage, `✅ Successfully imported ${newGuests.length} guests to Firebase!`, 'success');
                     fileInput.value = '';
@@ -821,7 +851,6 @@
         function deleteGuest(firebaseKey) {
             db.ref(`guests/${firebaseKey}`).remove()
                 .catch(err => console.error('Delete error:', err));
-            // onValue listener will auto-refresh the displayed list
         }
 
         // ─────────────────────────────────────────────
@@ -896,7 +925,6 @@
 
             if (!file) return;
 
-            // Warn for large files (Firebase RTDB node limit ≈ 10 MB)
             if (file.size > 5 * 1024 * 1024) {
                 showMessage(adminMessage,
                     '⚠️ This image exceeds 5 MB. It may fail to save. Please use a smaller image.',
@@ -913,7 +941,6 @@
                     .then(() => {
                         showMessage(adminMessage, '✅ Table layout photo uploaded successfully!', 'success');
                         setTimeout(() => adminMessage.innerHTML = '', 5000);
-                        // onValue listener will call displayTablePhoto() automatically
                     })
                     .catch(err => {
                         console.error('Photo upload error:', err);
@@ -926,11 +953,11 @@
         }
 
         // ─────────────────────────────────────────────
-        //  Display Table Photo (footer + admin preview)
+        //  Display Table Photo
         // ─────────────────────────────────────────────
         function displayTablePhoto() {
-            const footer   = document.getElementById('tablePhotoFooter');
-            const preview  = document.getElementById('photoPreviewContainer');
+            const footer  = document.getElementById('tablePhotoFooter');
+            const preview = document.getElementById('photoPreviewContainer');
 
             if (tablePhoto) {
                 footer.innerHTML = `
@@ -945,7 +972,7 @@
                     `;
                 }
             } else {
-                footer.innerHTML           = '';
+                footer.innerHTML = '';
                 if (preview) preview.innerHTML = '';
             }
         }
