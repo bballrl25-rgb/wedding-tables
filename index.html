@@ -6,6 +6,10 @@
     <title>Reuben and Cami 2026 - Table Assignments</title>
     <!-- SheetJS Library for Excel parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js"></script>
     <style>
         * {
             margin: 0;
@@ -365,6 +369,12 @@
             flex: 1;
         }
 
+        .loading {
+            text-align: center;
+            color: #999;
+            padding: 2rem;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.8rem;
@@ -508,26 +518,62 @@
     </footer>
 
     <script>
-        // Initialize data from localStorage
-        let guestList = JSON.parse(localStorage.getItem('weddingGuestList')) || [];
-        let tablePhoto = localStorage.getItem('weddingTablePhoto') || null;
+const firebaseConfig = {
+  apiKey: "AIzaSyCjZwyIbDXpztL7uSLSUsFMKUZOvMLxkCA",
+  authDomain: "wedding-tables-1b19c.firebaseapp.com",
+  databaseURL: "https://wedding-tables-1b19c-default-rtdb.firebaseio.com",
+  projectId: "wedding-tables-1b19c",
+  storageBucket: "wedding-tables-1b19c.firebasestorage.app",
+  messagingSenderId: "524793511585",
+  appId: "1:524793511585:web:e5ddd5e6606e2d2fa2bae0"
+};
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const storage = firebase.storage();
+
+        // Initialize data
+        let guestList = [];
+        let tablePhoto = null;
         let isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
 
         const ADMIN_PASSWORD = 'RC2026';
 
-        // Check if admin is logged in on page load
+        // Load data from Firebase on page load
         document.addEventListener('DOMContentLoaded', function() {
-            displayTablePhoto();
+            loadGuestListFromFirebase();
+            loadPhotoFromFirebase();
             if (isAdminLoggedIn) {
                 document.getElementById('logoutBtn').style.display = 'block';
-                displayGuestList();
             }
         });
+
+        // Load guest list from Firebase
+        function loadGuestListFromFirebase() {
+            database.ref('guestList').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    guestList = Object.values(data);
+                    displayTablePhoto();
+                }
+            });
+        }
+
+        // Load photo from Firebase
+        function loadPhotoFromFirebase() {
+            database.ref('tablePhotoURL').on('value', (snapshot) => {
+                const url = snapshot.val();
+                if (url) {
+                    tablePhoto = url;
+                    displayTablePhoto();
+                }
+            });
+        }
 
         // Switch between tabs
         function switchTab(tabName) {
             if (tabName === 'admin' && !isAdminLoggedIn) {
-                // Show password modal instead of switching tab
                 showPasswordModal();
                 return;
             }
@@ -562,7 +608,6 @@
                 document.getElementById('passwordModalOverlay').classList.remove('active');
                 document.getElementById('logoutBtn').style.display = 'block';
                 
-                // Switch to admin tab
                 document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
                 document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
                 
@@ -583,7 +628,6 @@
             document.getElementById('adminPassword').value = '';
             document.getElementById('passwordMessage').innerHTML = '';
             
-            // Switch back to guest tab
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             
@@ -597,7 +641,6 @@
             isAdminLoggedIn = false;
             document.getElementById('logoutBtn').style.display = 'none';
             
-            // Switch back to guest tab
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             
@@ -622,32 +665,26 @@
                     let rows = [];
 
                     if (isCSV) {
-                        // Parse CSV as text
                         const csvText = e.target.result;
                         const lines = csvText.split('\n');
                         rows = lines.map(line => {
-                            // Handle CSV parsing with proper comma splitting
                             return line.split(',').map(cell => cell.trim());
-                        }).filter(row => row.length >= 3 && row[0]); // Filter out empty rows
+                        }).filter(row => row.length >= 3 && row[0]);
                     } else {
-                        // Parse Excel file
                         const data = e.target.result;
                         const workbook = XLSX.read(data, { type: 'array' });
                         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                         rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                     }
 
-                    // Clear existing guest list
                     guestList = [];
 
-                    // Parse rows
                     rows.forEach((row, index) => {
                         if (row.length >= 3) {
                             const firstName = String(row[0]).trim();
                             const lastName = String(row[1]).trim();
                             const tableNumber = parseInt(row[2]);
 
-                            // Skip empty rows and invalid entries
                             if (firstName && lastName && !isNaN(tableNumber)) {
                                 const fullName = `${firstName} ${lastName}`;
                                 guestList.push({
@@ -663,8 +700,8 @@
                         return;
                     }
 
-                    // Save to localStorage
-                    localStorage.setItem('weddingGuestList', JSON.stringify(guestList));
+                    // Save to Firebase
+                    database.ref('guestList').set(guestList);
 
                     showMessage(adminMessage, `✅ Successfully imported ${guestList.length} guests!`, 'success');
                     fileInput.value = '';
@@ -677,7 +714,6 @@
                 }
             };
 
-            // Read file appropriately based on type
             if (isCSV) {
                 reader.readAsText(file);
             } else {
@@ -688,7 +724,7 @@
         // Delete a guest
         function deleteGuest(index) {
             guestList.splice(index, 1);
-            localStorage.setItem('weddingGuestList', JSON.stringify(guestList));
+            database.ref('guestList').set(guestList);
             displayGuestList();
         }
 
@@ -704,7 +740,6 @@
                 return;
             }
 
-            // Sort by table number
             const sortedGuests = [...guestList].sort((a, b) => a.table - b.table);
 
             container.innerHTML = sortedGuests.map((guest, index) => {
@@ -733,7 +768,6 @@
                 return;
             }
 
-            // Search by first name, last name, or full name
             const guest = guestList.find(g => 
                 g.name.toLowerCase().includes(searchName.toLowerCase())
             );
@@ -764,7 +798,10 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 tablePhoto = e.target.result;
-                localStorage.setItem('weddingTablePhoto', tablePhoto);
+                
+                // Save to Firebase
+                database.ref('tablePhotoURL').set(tablePhoto);
+                
                 showMessage(adminMessage, '✅ Table layout photo uploaded successfully!', 'success');
                 displayTablePhoto();
                 setTimeout(() => adminMessage.innerHTML = '', 5000);
