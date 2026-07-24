@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reuben and Cami 2026 - Table Assignments</title>
+    <!-- SheetJS Library for Excel parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f5f1ed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #4a4a4a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: #fffaf5;
+            padding: 2rem 1rem;
+            text-align: center;
+            border-bottom: 2px solid #e8dfd7;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: #8b7355;
+        }
+
+        .container {
+            flex: 1;
+            max-width: 900px;
+            margin: 2rem auto;
+            width: 100%;
+            padding: 0 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid #d4c5b9;
+            background-color: #fffaf5;
+            color: #8b7355;
+            cursor: pointer;
+            font-size: 1rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab-button.active {
+            background-color: #8b7355;
+            color: #fffaf5;
+            border-color: #8b7355;
+        }
+
+        .tab-button:hover {
+            border-color: #8b7355;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .card {
+            background-color: #fffaf5;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e8dfd7;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #6b5d52;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        input[type="file"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #d4c5b9;
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: #fefdfb;
+            color: #4a4a4a;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        input[type="number"]:focus,
+        input[type="file"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #8b7355;
+            background-color: #fffaf5;
+        }
+
+        button {
+            background-color: #8b7355;
+            color: #fffaf5;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #6b5d52;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .guest-list {
+            margin-top: 2rem;
+        }
+
+        .guest-item {
+            background-color: #fefdfb;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #d4c5b9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 4px;
+        }
+
+        .guest-item.result {
+            border-left-color: #8b7355;
+            background-color: #fffaf5;
+            padding: 2rem;
+            text-align: center;
+            font-size: 1.2rem;
+            margin-top: 2rem;
+        }
+
+        .guest-name {
+            font-weight: 500;
+            color: #4a4a4a;
+        }
+
+        .table-number {
+            background-color: #8b7355;
+            color: #fffaf5;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .delete-btn {
+            background-color: #c97575;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+        }
+
+        .delete-btn:hover {
+            background-color: #b06262;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #f5c6cb;
+        }
+
+        .table-photo {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid #e8ddf7;
+        }
+
+        .photo-preview {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .guest-search {
+            text-align: center;
+        }
+
+        .guest-search h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #8b7355;
+            font-weight: 400;
+        }
+
+        .search-input-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-input-container input {
+            flex: 1;
+        }
+
+        .search-input-container button {
+            flex: 0.3;
+        }
+
+        .result-name {
+            font-size: 1.5rem;
+            color: #4a4a4a;
+            margin-bottom: 1rem;
+        }
+
+        .result-table {
+            font-size: 3rem;
+            color: #8b7355;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        /* Password Modal Overlay */
+        .password-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .password-modal-overlay.active {
+            display: flex;
+        }
+
+        .password-modal {
+            background-color: #fffaf5;
+            padding: 3rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e8dfd7;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .password-modal h2 {
+            color: #8b7355;
+            margin-bottom: 1.5rem;
+            font-weight: 400;
+            font-size: 1.5rem;
+        }
+
+        .password-modal p {
+            color: #999;
+            margin-bottom: 1.5rem;
+        }
+
+        .logout-btn {
+            background-color: #c97575;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .logout-btn:hover {
+            background-color: #b06262;
+        }
+
+        .excel-info {
+            background-color: #e7f3ff;
+            color: #004085;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #b3d9ff;
+            font-size: 0.95rem;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .admin-notice {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #ffeaa7;
+            text-align: center;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .guest-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .delete-btn {
+                margin-left: 0;
+                margin-top: 0.5rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                width: 100%;
+            }
+
+            .password-modal {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+
+            .admin-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Reuben and Cami 2026</h1>
+    </header>
+
+    <!-- Password Modal Overlay -->
+    <div id="passwordModalOverlay" class="password-modal-overlay">
+        <div class="password-modal">
+            <h2>Admin Access</h2>
+            <p>Enter password to access admin panel</p>
+            <div class="form-group">
+                <input type="password" id="adminPassword" placeholder="Password" onkeypress="if(event.key==='Enter') verifyPassword()">
+            </div>
+            <div class="button-group">
+                <button onclick="verifyPassword()">Login</button>
+                <button style="background-color: #d4c5b9;" onclick="cancelPasswordPrompt()">Cancel</button>
+            </div>
+            <div id="passwordMessage"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('guest')">Find Your Table</button>
+            <button class="tab-button" onclick="switchTab('admin')">Admin Access</button>
+        </div>
+
+        <!-- Guest Tab -->
+        <div id="guest" class="tab-content active">
+            <div class="card guest-search">
+                <h2>Welcome to Our Wedding</h2>
+                <p style="margin-bottom: 1.5rem; color: #999;">Enter your name to find your assigned table</p>
+                <div class="search-input-container">
+                    <input type="text" id="guestNameInput" placeholder="Enter your name" onkeypress="if(event.key==='Enter') searchGuest()">
+                    <button onclick="searchGuest()">Search</button>
+                </div>
+                <div id="guestResult"></div>
+            </div>
+        </div>
+
+        <!-- Admin Tab -->
+        <div id="admin" class="tab-content">
+            <div class="card">
+                <div class="admin-notice">
+                    💡 <strong>Admin Setup:</strong> Use this panel to upload your guest list and table layout photo. Click the "Admin Access" tab to enter your password.
+                </div>
+
+                <div class="admin-header">
+                    <h2 style="color: #8b7355; font-size: 1.8rem; font-weight: 400;">Admin Panel</h2>
+                    <button class="logout-btn" id="logoutBtn" style="display: none;" onclick="logoutAdmin()">Logout</button>
+                </div>
+                
+                <div id="adminMessage"></div>
+
+                <!-- Upload Excel Section -->
+                <div style="margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 2px solid #e8ddf7;">
+                    <h3 style="color: #8b7355; margin-bottom: 1rem; font-weight: 500;">📋 Upload Guest List (Excel or CSV)</h3>
+                    <div class="excel-info">
+                        <strong>File Format Required:</strong><br>
+                        • Column A = First Name<br>
+                        • Column B = Last Name<br>
+                        • Column C = Table Number<br><br>
+                        <strong>Example Row:</strong> Cameron | Lumaban | 0<br><br>
+                        ✅ Accepts: .xlsx, .xls, .csv
+                    </div>
+                    <div class="form-group">
+                        <label for="excelUpload">Upload Excel or CSV File</label>
+                        <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv" onchange="uploadExcel()">
+                    </div>
+                </div>
+
+                <!-- Upload Photo Section -->
+                <div style="margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 2px solid #e8ddf7;">
+                    <h3 style="color: #8b7355; margin-bottom: 1rem; font-weight: 500;">📸 Table Layout Photo</h3>
+                    <p style="color: #999; margin-bottom: 1rem;">Upload a photo of your table layout to display at the bottom of every page</p>
+                    <div class="form-group">
+                        <label for="photoUpload">Upload Table Layout Photo</label>
+                        <input type="file" id="photoUpload" accept="image/*" onchange="uploadPhoto()">
+                    </div>
+                    <div id="photoPreviewContainer"></div>
+                </div>
+
+                <!-- Guest List Section -->
+                <div>
+                    <h3 style="color: #8b7355; margin-bottom: 1rem; font-weight: 500;">👥 Current Guest List (<span id="guestCount">0</span> guests)</h3>
+                    <div id="guestListAdmin" class="guest-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Photo Footer (visible on all pages) -->
+    <div class="table-photo" id="tablePhotoFooter"></div>
+
+    <footer>
+        <p>We're excited to celebrate with you!</p>
+    </footer>
+
+    <script>
+        // Initialize data from localStorage
+        let guestList = JSON.parse(localStorage.getItem('weddingGuestList')) || [];
+        let tablePhoto = localStorage.getItem('weddingTablePhoto') || null;
+        let isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
+
+        const ADMIN_PASSWORD = 'RC2026';
+
+        // Check if admin is logged in on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            displayTablePhoto();
+            if (isAdminLoggedIn) {
+                document.getElementById('logoutBtn').style.display = 'block';
+                displayGuestList();
+            }
+        });
+
+        // Switch between tabs
+        function switchTab(tabName) {
+            if (tabName === 'admin' && !isAdminLoggedIn) {
+                // Show password modal instead of switching tab
+                showPasswordModal();
+                return;
+            }
+
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'admin') {
+                displayGuestList();
+            }
+        }
+
+        // Show password modal
+        function showPasswordModal() {
+            document.getElementById('passwordModalOverlay').classList.add('active');
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('passwordMessage').innerHTML = '';
+            document.getElementById('adminPassword').focus();
+        }
+
+        // Verify password
+        function verifyPassword() {
+            const password = document.getElementById('adminPassword').value;
+            const passwordMessage = document.getElementById('passwordMessage');
+
+            if (password === ADMIN_PASSWORD) {
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                isAdminLoggedIn = true;
+                document.getElementById('passwordModalOverlay').classList.remove('active');
+                document.getElementById('logoutBtn').style.display = 'block';
+                
+                // Switch to admin tab
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                
+                document.getElementById('admin').classList.add('active');
+                document.querySelectorAll('.tab-button')[1].classList.add('active');
+                
+                displayGuestList();
+            } else {
+                passwordMessage.innerHTML = '<div class="error-message" style="margin-top: 1rem;">❌ Incorrect password. Please try again.</div>';
+                document.getElementById('adminPassword').value = '';
+                setTimeout(() => passwordMessage.innerHTML = '', 3000);
+            }
+        }
+
+        // Cancel password prompt
+        function cancelPasswordPrompt() {
+            document.getElementById('passwordModalOverlay').classList.remove('active');
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('passwordMessage').innerHTML = '';
+            
+            // Switch back to guest tab
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById('guest').classList.add('active');
+            document.querySelectorAll('.tab-button')[0].classList.add('active');
+        }
+
+        // Logout from admin
+        function logoutAdmin() {
+            sessionStorage.removeItem('adminLoggedIn');
+            isAdminLoggedIn = false;
+            document.getElementById('logoutBtn').style.display = 'none';
+            
+            // Switch back to guest tab
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById('guest').classList.add('active');
+            document.querySelectorAll('.tab-button')[0].classList.add('active');
+        }
+
+        // Upload and parse Excel or CSV file
+        function uploadExcel() {
+            const fileInput = document.getElementById('excelUpload');
+            const file = fileInput.files[0];
+            const adminMessage = document.getElementById('adminMessage');
+
+            if (!file) return;
+
+            const fileName = file.name.toLowerCase();
+            const isCSV = fileName.endsWith('.csv');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let rows = [];
+
+                    if (isCSV) {
+                        // Parse CSV as text
+                        const csvText = e.target.result;
+                        const lines = csvText.split('\n');
+                        rows = lines.map(line => {
+                            // Handle CSV parsing with proper comma splitting
+                            return line.split(',').map(cell => cell.trim());
+                        }).filter(row => row.length >= 3 && row[0]); // Filter out empty rows
+                    } else {
+                        // Parse Excel file
+                        const data = e.target.result;
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    }
+
+                    // Clear existing guest list
+                    guestList = [];
+
+                    // Parse rows
+                    rows.forEach((row, index) => {
+                        if (row.length >= 3) {
+                            const firstName = String(row[0]).trim();
+                            const lastName = String(row[1]).trim();
+                            const tableNumber = parseInt(row[2]);
+
+                            // Skip empty rows and invalid entries
+                            if (firstName && lastName && !isNaN(tableNumber)) {
+                                const fullName = `${firstName} ${lastName}`;
+                                guestList.push({
+                                    name: fullName,
+                                    table: tableNumber
+                                });
+                            }
+                        }
+                    });
+
+                    if (guestList.length === 0) {
+                        showMessage(adminMessage, '❌ No valid guests found. Please check your file format.', 'error');
+                        return;
+                    }
+
+                    // Save to localStorage
+                    localStorage.setItem('weddingGuestList', JSON.stringify(guestList));
+
+                    showMessage(adminMessage, `✅ Successfully imported ${guestList.length} guests!`, 'success');
+                    fileInput.value = '';
+                    displayGuestList();
+                    setTimeout(() => adminMessage.innerHTML = '', 5000);
+
+                } catch (error) {
+                    console.error('Full error:', error);
+                    showMessage(adminMessage, '❌ Error parsing file. Make sure it\'s a valid CSV or Excel file with the correct format.', 'error');
+                }
+            };
+
+            // Read file appropriately based on type
+            if (isCSV) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        // Delete a guest
+        function deleteGuest(index) {
+            guestList.splice(index, 1);
+            localStorage.setItem('weddingGuestList', JSON.stringify(guestList));
+            displayGuestList();
+        }
+
+        // Display guest list in admin
+        function displayGuestList() {
+            const container = document.getElementById('guestListAdmin');
+            const countElement = document.getElementById('guestCount');
+            
+            countElement.textContent = guestList.length;
+
+            if (guestList.length === 0) {
+                container.innerHTML = '<p style="color: #999; text-align: center; padding: 2rem;">No guests added yet. Upload an Excel or CSV file to get started.</p>';
+                return;
+            }
+
+            // Sort by table number
+            const sortedGuests = [...guestList].sort((a, b) => a.table - b.table);
+
+            container.innerHTML = sortedGuests.map((guest, index) => {
+                const originalIndex = guestList.findIndex(g => g.name === guest.name && g.table === guest.table);
+                return `
+                    <div class="guest-item">
+                        <div>
+                            <span class="guest-name">${guest.name}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span class="table-number">Table ${guest.table}</span>
+                            <button class="delete-btn" onclick="deleteGuest(${originalIndex})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Search for a guest
+        function searchGuest() {
+            const searchName = document.getElementById('guestNameInput').value.trim();
+            const resultContainer = document.getElementById('guestResult');
+
+            if (!searchName) {
+                resultContainer.innerHTML = '<p style="color: #999;">Please enter your name</p>';
+                return;
+            }
+
+            // Search by first name, last name, or full name
+            const guest = guestList.find(g => 
+                g.name.toLowerCase().includes(searchName.toLowerCase())
+            );
+
+            if (guest) {
+                resultContainer.innerHTML = `
+                    <div class="guest-item result">
+                        <div class="result-name">${guest.name}</div>
+                        <div style="color: #8b7355; margin-bottom: 0.5rem; font-size: 0.9rem;">Your table is</div>
+                        <div class="result-table">${guest.table}</div>
+                    </div>
+                `;
+            } else {
+                resultContainer.innerHTML = '<p style="color: #c97575; margin-top: 1.5rem;">Guest not found. Please check your name and try again.</p>';
+            }
+
+            document.getElementById('guestNameInput').value = '';
+        }
+
+        // Upload photo
+        function uploadPhoto() {
+            const fileInput = document.getElementById('photoUpload');
+            const file = fileInput.files[0];
+            const adminMessage = document.getElementById('adminMessage');
+
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                tablePhoto = e.target.result;
+                localStorage.setItem('weddingTablePhoto', tablePhoto);
+                showMessage(adminMessage, '✅ Table layout photo uploaded successfully!', 'success');
+                displayTablePhoto();
+                setTimeout(() => adminMessage.innerHTML = '', 5000);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Display table photo
+        function displayTablePhoto() {
+            const footer = document.getElementById('tablePhotoFooter');
+            if (tablePhoto) {
+                footer.innerHTML = `
+                    <div style="text-align: center; padding: 0 1rem;">
+                        <img src="${tablePhoto}" alt="Table Layout" class="photo-preview">
+                    </div>
+                `;
+            } else {
+                footer.innerHTML = '';
+            }
+        }
+
+        // Show messages
+        function showMessage(container, message, type) {
+            const className = type === 'success' ? 'success-message' : 'error-message';
+            container.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+    </script>
+</body>
+</html>
