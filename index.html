@@ -518,7 +518,12 @@
     </footer>
 
     <script>
-        // Firebase Configuration
+        // ===== DECLARE ALL VARIABLES AT THE TOP BEFORE ANY CODE =====
+        var guestList = [];
+        var tablePhoto = null;
+        var isAdminLoggedIn = false;
+        var database = null;
+        
         const firebaseConfig = {
             apiKey: "AIzaSyCjZwyIbDXpztL7uSLSUsFMKUZOvMLxkCA",
             authDomain: "wedding-tables-1b19c.firebaseapp.com",
@@ -529,26 +534,19 @@
             appId: "1:524793511585:web:e5ddd5e6606e2d2fa2bae0"
         };
 
+        const ADMIN_PASSWORD = 'RC2026';
+
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        // Global variables - DECLARE ALL AT TOP
-        var guestList = [];
-        var tablePhoto = null;
-        var isAdminLoggedIn = false;
-        var database_ref = database;
-
-        const ADMIN_PASSWORD = 'RC2026';
+        database = firebase.database();
 
         // Check if user is already logged in
         if (sessionStorage.getItem('adminLoggedIn') === 'true') {
             isAdminLoggedIn = true;
         }
 
-        // Load data from Firebase on page load
+        // Load data on page load
         window.addEventListener('load', function() {
-            console.log('Page loaded, loading data from Firebase...');
             loadGuestListFromFirebase();
             loadPhotoFromFirebase();
             if (isAdminLoggedIn) {
@@ -556,11 +554,11 @@
             }
         });
 
-        // Load guest list from Firebase
+        // ===== FUNCTION DEFINITIONS =====
+        
         function loadGuestListFromFirebase() {
-            database_ref.ref('guestList').once('value').then((snapshot) => {
-                const data = snapshot.val();
-                console.log('Guest list data:', data);
+            database.ref('guestList').once('value').then(function(snapshot) {
+                var data = snapshot.val();
                 if (data && typeof data === 'object') {
                     if (Array.isArray(data)) {
                         guestList = data;
@@ -569,43 +567,49 @@
                     }
                 }
                 displayTablePhoto();
-            }).catch(err => console.error('Error loading guests:', err));
+            }).catch(function(err) {
+                console.error('Error loading guests:', err);
+            });
         }
 
-        // Load photo from Firebase
         function loadPhotoFromFirebase() {
-            database_ref.ref('tablePhotoURL').once('value').then((snapshot) => {
-                const url = snapshot.val();
-                console.log('Photo URL:', url);
+            database.ref('tablePhotoURL').once('value').then(function(snapshot) {
+                var url = snapshot.val();
                 if (url) {
                     tablePhoto = url;
                     displayTablePhoto();
                 }
-            }).catch(err => console.error('Error loading photo:', err));
+            }).catch(function(err) {
+                console.error('Error loading photo:', err);
+            });
         }
 
-        // Switch between tabs
         function switchTab(tabName) {
-            console.log('Switching to tab:', tabName, 'Admin logged in:', isAdminLoggedIn);
+            console.log('Switching to tab:', tabName);
             
             if (tabName === 'admin' && !isAdminLoggedIn) {
-                console.log('Admin not logged in, showing password modal');
                 showPasswordModal();
                 return;
             }
 
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            
-            const tabElement = document.getElementById(tabName);
-            if (tabElement) {
-                tabElement.classList.add('active');
+            var tabs = document.querySelectorAll('.tab-content');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
             }
             
-            const buttons = document.querySelectorAll('.tab-button');
-            if (tabName === 'guest' && buttons.length > 0) {
+            var buttons = document.querySelectorAll('.tab-button');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
+            
+            var tabEl = document.getElementById(tabName);
+            if (tabEl) {
+                tabEl.classList.add('active');
+            }
+            
+            if (tabName === 'guest') {
                 buttons[0].classList.add('active');
-            } else if (tabName === 'admin' && buttons.length > 1) {
+            } else if (tabName === 'admin') {
                 buttons[1].classList.add('active');
             }
 
@@ -614,21 +618,19 @@
             }
         }
 
-        // Show password modal
         function showPasswordModal() {
-            console.log('Showing password modal');
-            const modal = document.getElementById('passwordModalOverlay');
+            var modal = document.getElementById('passwordModalOverlay');
             modal.classList.add('active');
             document.getElementById('adminPassword').value = '';
             document.getElementById('passwordMessage').innerHTML = '';
-            setTimeout(() => document.getElementById('adminPassword').focus(), 100);
+            setTimeout(function() {
+                document.getElementById('adminPassword').focus();
+            }, 100);
         }
 
-        // Verify password
         function verifyPassword() {
-            const password = document.getElementById('adminPassword').value;
-            const passwordMessage = document.getElementById('passwordMessage');
-            console.log('Password check:', password === ADMIN_PASSWORD);
+            var password = document.getElementById('adminPassword').value;
+            var passwordMessage = document.getElementById('passwordMessage');
 
             if (password === ADMIN_PASSWORD) {
                 sessionStorage.setItem('adminLoggedIn', 'true');
@@ -636,102 +638,117 @@
                 document.getElementById('passwordModalOverlay').classList.remove('active');
                 document.getElementById('logoutBtn').style.display = 'block';
                 
-                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                var tabs = document.querySelectorAll('.tab-content');
+                for (var i = 0; i < tabs.length; i++) {
+                    tabs[i].classList.remove('active');
+                }
+                
+                var buttons = document.querySelectorAll('.tab-button');
+                for (var i = 0; i < buttons.length; i++) {
+                    buttons[i].classList.remove('active');
+                }
                 
                 document.getElementById('admin').classList.add('active');
-                const buttons = document.querySelectorAll('.tab-button');
-                if (buttons.length > 1) {
-                    buttons[1].classList.add('active');
-                }
+                buttons[1].classList.add('active');
                 
                 displayGuestList();
             } else {
                 passwordMessage.innerHTML = '<div class="error-message" style="margin-top: 1rem;">❌ Incorrect password. Please try again.</div>';
                 document.getElementById('adminPassword').value = '';
-                setTimeout(() => passwordMessage.innerHTML = '', 3000);
+                setTimeout(function() {
+                    passwordMessage.innerHTML = '';
+                }, 3000);
             }
         }
 
-        // Cancel password prompt
         function cancelPasswordPrompt() {
-            console.log('Canceling password prompt');
             document.getElementById('passwordModalOverlay').classList.remove('active');
             document.getElementById('adminPassword').value = '';
             document.getElementById('passwordMessage').innerHTML = '';
             
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            var tabs = document.querySelectorAll('.tab-content');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            
+            var buttons = document.querySelectorAll('.tab-button');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
             
             document.getElementById('guest').classList.add('active');
-            const buttons = document.querySelectorAll('.tab-button');
-            if (buttons.length > 0) {
-                buttons[0].classList.add('active');
-            }
+            buttons[0].classList.add('active');
         }
 
-        // Logout from admin
         function logoutAdmin() {
             sessionStorage.removeItem('adminLoggedIn');
             isAdminLoggedIn = false;
             document.getElementById('logoutBtn').style.display = 'none';
             
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            var tabs = document.querySelectorAll('.tab-content');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            
+            var buttons = document.querySelectorAll('.tab-button');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
             
             document.getElementById('guest').classList.add('active');
-            const buttons = document.querySelectorAll('.tab-button');
-            if (buttons.length > 0) {
-                buttons[0].classList.add('active');
-            }
+            buttons[0].classList.add('active');
         }
 
-        // Upload and parse Excel or CSV file
         function uploadExcel() {
-            const fileInput = document.getElementById('excelUpload');
-            const file = fileInput.files[0];
-            const adminMessage = document.getElementById('adminMessage');
+            var fileInput = document.getElementById('excelUpload');
+            var file = fileInput.files[0];
+            var adminMessage = document.getElementById('adminMessage');
 
             if (!file) return;
 
-            const fileName = file.name.toLowerCase();
-            const isCSV = fileName.endsWith('.csv');
+            var fileName = file.name.toLowerCase();
+            var isCSV = fileName.endsWith('.csv');
 
-            const reader = new FileReader();
+            var reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    let rows = [];
+                    var rows = [];
 
                     if (isCSV) {
-                        const csvText = e.target.result;
-                        const lines = csvText.split('\n');
-                        rows = lines.map(line => {
-                            return line.split(',').map(cell => cell.trim());
-                        }).filter(row => row.length >= 3 && row[0]);
+                        var csvText = e.target.result;
+                        var lines = csvText.split('\n');
+                        rows = lines.map(function(line) {
+                            return line.split(',').map(function(cell) {
+                                return cell.trim();
+                            });
+                        }).filter(function(row) {
+                            return row.length >= 3 && row[0];
+                        });
                     } else {
-                        const data = e.target.result;
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        var data = e.target.result;
+                        var workbook = XLSX.read(data, { type: 'array' });
+                        var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                         rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                     }
 
                     guestList = [];
 
-                    rows.forEach((row) => {
+                    for (var i = 0; i < rows.length; i++) {
+                        var row = rows[i];
                         if (row.length >= 3) {
-                            const firstName = String(row[0]).trim();
-                            const lastName = String(row[1]).trim();
-                            const tableNumber = parseInt(row[2]);
+                            var firstName = String(row[0]).trim();
+                            var lastName = String(row[1]).trim();
+                            var tableNumber = parseInt(row[2]);
 
                             if (firstName && lastName && !isNaN(tableNumber)) {
-                                const fullName = firstName + ' ' + lastName;
+                                var fullName = firstName + ' ' + lastName;
                                 guestList.push({
                                     name: fullName,
                                     table: tableNumber
                                 });
                             }
                         }
-                    });
+                    }
 
                     if (guestList.length === 0) {
                         showMessage(adminMessage, '❌ No valid guests found. Please check your file format.', 'error');
@@ -739,18 +756,20 @@
                     }
 
                     // Save to Firebase
-                    database_ref.ref('guestList').set(guestList).then(() => {
+                    database.ref('guestList').set(guestList).then(function() {
                         showMessage(adminMessage, '✅ Successfully imported ' + guestList.length + ' guests!', 'success');
                         fileInput.value = '';
                         displayGuestList();
-                        setTimeout(() => adminMessage.innerHTML = '', 5000);
-                    }).catch(err => {
+                        setTimeout(function() {
+                            adminMessage.innerHTML = '';
+                        }, 5000);
+                    }).catch(function(err) {
                         showMessage(adminMessage, '❌ Error saving to database: ' + err.message, 'error');
                     });
 
                 } catch (error) {
-                    console.error('Full error:', error);
-                    showMessage(adminMessage, '❌ Error parsing file. Make sure it\'s a valid CSV or Excel file with the correct format.', 'error');
+                    console.error('Error:', error);
+                    showMessage(adminMessage, '❌ Error parsing file. Make sure it\'s a valid CSV or Excel file.', 'error');
                 }
             };
 
@@ -761,18 +780,18 @@
             }
         }
 
-        // Delete a guest
         function deleteGuest(index) {
             guestList.splice(index, 1);
-            database_ref.ref('guestList').set(guestList).then(() => {
+            database.ref('guestList').set(guestList).then(function() {
                 displayGuestList();
-            }).catch(err => console.error('Error deleting guest:', err));
+            }).catch(function(err) {
+                console.error('Error deleting guest:', err);
+            });
         }
 
-        // Display guest list in admin
         function displayGuestList() {
-            const container = document.getElementById('guestListAdmin');
-            const countElement = document.getElementById('guestCount');
+            var container = document.getElementById('guestListAdmin');
+            var countElement = document.getElementById('guestCount');
             
             countElement.textContent = guestList.length;
 
@@ -781,48 +800,44 @@
                 return;
             }
 
-            const sortedGuests = guestList.slice().sort((a, b) => a.table - b.table);
-
-            let html = '';
-            sortedGuests.forEach((guest) => {
-                const originalIndex = guestList.findIndex(g => g.name === guest.name && g.table === guest.table);
-                html += `
-                    <div class="guest-item">
-                        <div>
-                            <span class="guest-name">${guest.name}</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <span class="table-number">Table ${guest.table}</span>
-                            <button class="delete-btn" onclick="deleteGuest(${originalIndex})">Delete</button>
-                        </div>
-                    </div>
-                `;
+            var sortedGuests = guestList.slice().sort(function(a, b) {
+                return a.table - b.table;
             });
+
+            var html = '';
+            for (var i = 0; i < sortedGuests.length; i++) {
+                var guest = sortedGuests[i];
+                var originalIndex = -1;
+                for (var j = 0; j < guestList.length; j++) {
+                    if (guestList[j].name === guest.name && guestList[j].table === guest.table) {
+                        originalIndex = j;
+                        break;
+                    }
+                }
+                html += '<div class="guest-item"><div><span class="guest-name">' + guest.name + '</span></div><div style="display: flex; align-items: center; gap: 1rem;"><span class="table-number">Table ' + guest.table + '</span><button class="delete-btn" onclick="deleteGuest(' + originalIndex + ')">Delete</button></div></div>';
+            }
             container.innerHTML = html;
         }
 
-        // Search for a guest
         function searchGuest() {
-            const searchName = document.getElementById('guestNameInput').value.trim();
-            const resultContainer = document.getElementById('guestResult');
+            var searchName = document.getElementById('guestNameInput').value.trim();
+            var resultContainer = document.getElementById('guestResult');
 
             if (!searchName) {
                 resultContainer.innerHTML = '<p style="color: #999;">Please enter your name</p>';
                 return;
             }
 
-            const guest = guestList.find(g => 
-                g.name.toLowerCase().indexOf(searchName.toLowerCase()) !== -1
-            );
+            var guest = null;
+            for (var i = 0; i < guestList.length; i++) {
+                if (guestList[i].name.toLowerCase().indexOf(searchName.toLowerCase()) !== -1) {
+                    guest = guestList[i];
+                    break;
+                }
+            }
 
             if (guest) {
-                resultContainer.innerHTML = `
-                    <div class="guest-item result">
-                        <div class="result-name">${guest.name}</div>
-                        <div style="color: #8b7355; margin-bottom: 0.5rem; font-size: 0.9rem;">Your table is</div>
-                        <div class="result-table">${guest.table}</div>
-                    </div>
-                `;
+                resultContainer.innerHTML = '<div class="guest-item result"><div class="result-name">' + guest.name + '</div><div style="color: #8b7355; margin-bottom: 0.5rem; font-size: 0.9rem;">Your table is</div><div class="result-table">' + guest.table + '</div></div>';
             } else {
                 resultContainer.innerHTML = '<p style="color: #c97575; margin-top: 1.5rem;">Guest not found. Please check your name and try again.</p>';
             }
@@ -830,33 +845,33 @@
             document.getElementById('guestNameInput').value = '';
         }
 
-        // Upload photo
         function uploadPhoto() {
-            const fileInput = document.getElementById('photoUpload');
-            const file = fileInput.files[0];
-            const adminMessage = document.getElementById('adminMessage');
+            var fileInput = document.getElementById('photoUpload');
+            var file = fileInput.files[0];
+            var adminMessage = document.getElementById('adminMessage');
 
             if (!file) return;
 
-            const reader = new FileReader();
+            var reader = new FileReader();
             reader.onload = function(e) {
                 tablePhoto = e.target.result;
                 
                 // Save to Firebase
-                database_ref.ref('tablePhotoURL').set(tablePhoto).then(() => {
+                database.ref('tablePhotoURL').set(tablePhoto).then(function() {
                     showMessage(adminMessage, '✅ Table layout photo uploaded successfully!', 'success');
                     displayTablePhoto();
-                    setTimeout(() => adminMessage.innerHTML = '', 5000);
-                }).catch(err => {
+                    setTimeout(function() {
+                        adminMessage.innerHTML = '';
+                    }, 5000);
+                }).catch(function(err) {
                     showMessage(adminMessage, '❌ Error saving photo: ' + err.message, 'error');
                 });
             };
             reader.readAsDataURL(file);
         }
 
-        // Display table photo
         function displayTablePhoto() {
-            const footer = document.getElementById('tablePhotoFooter');
+            var footer = document.getElementById('tablePhotoFooter');
             if (tablePhoto) {
                 footer.innerHTML = '<div style="text-align: center; padding: 0 1rem;"><img src="' + tablePhoto + '" alt="Table Layout" class="photo-preview"></div>';
             } else {
@@ -864,9 +879,8 @@
             }
         }
 
-        // Show messages
         function showMessage(container, message, type) {
-            const className = type === 'success' ? 'success-message' : 'error-message';
+            var className = type === 'success' ? 'success-message' : 'error-message';
             container.innerHTML = '<div class="' + className + '">' + message + '</div>';
         }
     </script>
