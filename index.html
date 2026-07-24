@@ -9,7 +9,6 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js"></script>
     <style>
         * {
             margin: 0;
@@ -153,6 +152,10 @@
             background-color: #6b5d52;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
         }
 
         .guest-list {
@@ -348,6 +351,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .admin-notice {
@@ -367,12 +372,6 @@
 
         .button-group button {
             flex: 1;
-        }
-
-        .loading {
-            text-align: center;
-            color: #999;
-            padding: 2rem;
         }
 
         @media (max-width: 768px) {
@@ -409,12 +408,12 @@
 
             .admin-header {
                 flex-direction: column;
-                gap: 1rem;
                 align-items: flex-start;
             }
 
             .button-group {
                 flex-direction: column;
+                width: 100%;
             }
         }
     </style>
@@ -433,8 +432,8 @@
                 <input type="password" id="adminPassword" placeholder="Password" onkeypress="if(event.key==='Enter') verifyPassword()">
             </div>
             <div class="button-group">
-                <button onclick="verifyPassword()">Login</button>
-                <button style="background-color: #d4c5b9;" onclick="cancelPasswordPrompt()">Cancel</button>
+                <button onclick="verifyPassword()" style="flex: 1;">Login</button>
+                <button style="background-color: #d4c5b9; flex: 1;" onclick="cancelPasswordPrompt()">Cancel</button>
             </div>
             <div id="passwordMessage"></div>
         </div>
@@ -442,8 +441,8 @@
 
     <div class="container">
         <div class="tabs">
-            <button class="tab-button active" onclick="switchTab('guest')">Find Your Table</button>
-            <button class="tab-button" onclick="switchTab('admin')">Admin Access</button>
+            <button class="tab-button active" onclick="switchTab('guest', event)">Find Your Table</button>
+            <button class="tab-button" onclick="switchTab('admin', event)">Admin Access</button>
         </div>
 
         <!-- Guest Tab -->
@@ -467,7 +466,7 @@
                 </div>
 
                 <div class="admin-header">
-                    <h2 style="color: #8b7355; font-size: 1.8rem; font-weight: 400;">Admin Panel</h2>
+                    <h2 style="color: #8b7355; font-size: 1.8rem; font-weight: 400; margin: 0;">Admin Panel</h2>
                     <button class="logout-btn" id="logoutBtn" style="display: none;" onclick="logoutAdmin()">Logout</button>
                 </div>
                 
@@ -518,22 +517,22 @@
     </footer>
 
     <script>
+        // Firebase Configuration
         const firebaseConfig = {
-  		apiKey: "AIzaSyCjZwyIbDXpztL7uSLSUsFMKUZOvMLxkCA",
-  		authDomain: "wedding-tables-1b19c.firebaseapp.com",
-  		databaseURL: "https://wedding-tables-1b19c-default-rtdb.firebaseio.com",
-  		projectId: "wedding-tables-1b19c",
-  		storageBucket: "wedding-tables-1b19c.firebasestorage.app",
-  		messagingSenderId: "524793511585",
-  		appId: "1:524793511585:web:e5ddd5e6606e2d2fa2bae0"
-		};
+            apiKey: "AIzaSyCjZwyIbDXpztL7uSLSUsFMKUZOvMLxkCA",
+            authDomain: "wedding-tables-1b19c.firebaseapp.com",
+            databaseURL: "https://wedding-tables-1b19c-default-rtdb.firebaseio.com",
+            projectId: "wedding-tables-1b19c",
+            storageBucket: "wedding-tables-1b19c.firebasestorage.app",
+            messagingSenderId: "524793511585",
+            appId: "1:524793511585:web:e5ddd5e6606e2d2fa2bae0"
+        };
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        const storage = firebase.storage();
 
-        // Initialize data
+        // Global variables
         let guestList = [];
         let tablePhoto = null;
         let isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
@@ -541,7 +540,7 @@
         const ADMIN_PASSWORD = 'RC2026';
 
         // Load data from Firebase on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', function() {
             loadGuestListFromFirebase();
             loadPhotoFromFirebase();
             if (isAdminLoggedIn) {
@@ -551,28 +550,32 @@
 
         // Load guest list from Firebase
         function loadGuestListFromFirebase() {
-            database.ref('guestList').on('value', (snapshot) => {
+            database.ref('guestList').once('value').then((snapshot) => {
                 const data = snapshot.val();
-                if (data) {
+                if (data && typeof data === 'object') {
                     guestList = Object.values(data);
-                    displayTablePhoto();
+                } else if (Array.isArray(data)) {
+                    guestList = data;
                 }
-            });
+                displayTablePhoto();
+            }).catch(err => console.error('Error loading guests:', err));
         }
 
         // Load photo from Firebase
         function loadPhotoFromFirebase() {
-            database.ref('tablePhotoURL').on('value', (snapshot) => {
+            database.ref('tablePhotoURL').once('value').then((snapshot) => {
                 const url = snapshot.val();
                 if (url) {
                     tablePhoto = url;
                     displayTablePhoto();
                 }
-            });
+            }).catch(err => console.error('Error loading photo:', err));
         }
 
         // Switch between tabs
-        function switchTab(tabName) {
+        function switchTab(tabName, event) {
+            event.preventDefault();
+            
             if (tabName === 'admin' && !isAdminLoggedIn) {
                 showPasswordModal();
                 return;
@@ -594,7 +597,7 @@
             document.getElementById('passwordModalOverlay').classList.add('active');
             document.getElementById('adminPassword').value = '';
             document.getElementById('passwordMessage').innerHTML = '';
-            document.getElementById('adminPassword').focus();
+            setTimeout(() => document.getElementById('adminPassword').focus(), 100);
         }
 
         // Verify password
@@ -679,7 +682,7 @@
 
                     guestList = [];
 
-                    rows.forEach((row, index) => {
+                    rows.forEach((row) => {
                         if (row.length >= 3) {
                             const firstName = String(row[0]).trim();
                             const lastName = String(row[1]).trim();
@@ -701,12 +704,14 @@
                     }
 
                     // Save to Firebase
-                    database.ref('guestList').set(guestList);
-
-                    showMessage(adminMessage, `✅ Successfully imported ${guestList.length} guests!`, 'success');
-                    fileInput.value = '';
-                    displayGuestList();
-                    setTimeout(() => adminMessage.innerHTML = '', 5000);
+                    database.ref('guestList').set(guestList).then(() => {
+                        showMessage(adminMessage, `✅ Successfully imported ${guestList.length} guests!`, 'success');
+                        fileInput.value = '';
+                        displayGuestList();
+                        setTimeout(() => adminMessage.innerHTML = '', 5000);
+                    }).catch(err => {
+                        showMessage(adminMessage, '❌ Error saving to database: ' + err.message, 'error');
+                    });
 
                 } catch (error) {
                     console.error('Full error:', error);
@@ -724,8 +729,9 @@
         // Delete a guest
         function deleteGuest(index) {
             guestList.splice(index, 1);
-            database.ref('guestList').set(guestList);
-            displayGuestList();
+            database.ref('guestList').set(guestList).then(() => {
+                displayGuestList();
+            }).catch(err => console.error('Error deleting guest:', err));
         }
 
         // Display guest list in admin
@@ -800,11 +806,13 @@
                 tablePhoto = e.target.result;
                 
                 // Save to Firebase
-                database.ref('tablePhotoURL').set(tablePhoto);
-                
-                showMessage(adminMessage, '✅ Table layout photo uploaded successfully!', 'success');
-                displayTablePhoto();
-                setTimeout(() => adminMessage.innerHTML = '', 5000);
+                database.ref('tablePhotoURL').set(tablePhoto).then(() => {
+                    showMessage(adminMessage, '✅ Table layout photo uploaded successfully!', 'success');
+                    displayTablePhoto();
+                    setTimeout(() => adminMessage.innerHTML = '', 5000);
+                }).catch(err => {
+                    showMessage(adminMessage, '❌ Error saving photo: ' + err.message, 'error');
+                });
             };
             reader.readAsDataURL(file);
         }
